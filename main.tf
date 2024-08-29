@@ -98,3 +98,4 @@ resource "azurerm_container_group" "jenkins" {
     environment = "production"
   }
 }
+
