@@ -1,12 +1,24 @@
+terraform {
+  required_providers {
+    azurerm = {
+      source  = "hashicorp/azurerm"
+      version = "~>4.0"
+    }
+  }
+}
+
 provider "azurerm" {
   features {}
 }
+
 
 # Ressourcen-Gruppe
 resource "azurerm_resource_group" "rg" {
   name     = "rg-jenkins"
   location = "West Europe"
 }
+
+
 
 # Virtuelles Netzwerk
 resource "azurerm_virtual_network" "vnet" {
@@ -22,6 +34,34 @@ resource "azurerm_subnet" "jenkins_subnet" {
   resource_group_name  = azurerm_resource_group.rg.name
   virtual_network_name = azurerm_virtual_network.vnet.name
   address_prefixes     = ["10.0.0.0/24"]
+}
+
+# AKS Cluster
+resource "azurerm_kubernetes_cluster" "aks" {
+  name                = "aks-jenkins"
+  location            = azurerm_resource_group.rg.location
+  resource_group_name = azurerm_resource_group.rg.name
+  dns_prefix          = "aks-cluster"
+
+  default_node_pool {
+    name       = "default"
+    node_count = 1
+    vm_size    = "Standard_D2_v2"
+    vnet_subnet_id = azurerm_subnet.jenkins_subnet.id
+  }
+  identity {
+    type = "SystemAssigned"
+  }
+  tags = {
+    Environment = "Production"
+  }
+}
+
+# AKS Cluster Admin Kubeconfig
+data "azurerm_kubernetes_cluster" "aks" {
+  name                = azurerm_kubernetes_cluster.aks.name
+  resource_group_name = azurerm_resource_group.rg.name
+
 }
 
 # Öffentliche IP-Adresse für Jenkins
@@ -69,33 +109,5 @@ resource "azurerm_network_security_group" "jenkins_nsg" {
 resource "azurerm_network_interface_security_group_association" "nic_nsg_assoc" {
   network_interface_id      = azurerm_network_interface.jenkins_nic.id
   network_security_group_id = azurerm_network_security_group.jenkins_nsg.id
-}
-
-# Container-Gruppe für Jenkins
-resource "azurerm_container_group" "jenkins" {
-  name                = "jenkins-container-group"
-  location            = azurerm_resource_group.rg.location
-  resource_group_name = azurerm_resource_group.rg.name
-  os_type              = "Linux"
-
-  container {
-    name   = "jenkins"
-    image  = "jenkins/jenkins:lts"
-    cpu    = "1.0"
-    memory = "2.0"
-
-    ports {
-      port     = 8080
-      protocol = "TCP"
-    }
-
-    environment_variables = {
-      JENKINS_OPTS = "--httpPort=8080"
-    }
-  }
-
-  tags = {
-    environment = "production"
-  }
 }
 
