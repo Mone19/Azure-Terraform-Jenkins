@@ -5,7 +5,7 @@ provider "azurerm" {
 # Ressourcen-Gruppe
 resource "azurerm_resource_group" "rg" {
   name     = "rg-jenkins"
-  location = "West Europe"
+  location = "West US"
 }
 
 # Virtuelles Netzwerk
