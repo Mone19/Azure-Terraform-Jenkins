@@ -1,12 +1,3 @@
-terraform {
-  required_providers {
-    azurerm = {
-      source  = "hashicorp/azurerm"
-      version = "~> 3.0"
-    }
-  }
-}
-
 provider "azurerm" {
   features {}
 }
@@ -14,7 +5,7 @@ provider "azurerm" {
 # Ressourcen-Gruppe
 resource "azurerm_resource_group" "rg" {
   name     = "rg-jenkins"
-  location = "West US"
+  location = "West Europe"
 }
 
 # Virtuelles Netzwerk
