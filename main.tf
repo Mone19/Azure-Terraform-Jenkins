@@ -1,15 +1,21 @@
+terraform {
+  required_providers {
+    azurerm = {
+      source  = "hashicorp/azurerm"
+      version = "~> 3.0"
+    }
+  }
+}
+
 provider "azurerm" {
   features {}
 }
-
 
 # Ressourcen-Gruppe
 resource "azurerm_resource_group" "rg" {
   name     = "rg-jenkins"
   location = "West US"
 }
-
-
 
 # Virtuelles Netzwerk
 resource "azurerm_virtual_network" "vnet" {
@@ -88,26 +94,28 @@ resource "azurerm_kubernetes_cluster" "aks" {
     vnet_subnet_id = azurerm_subnet.jenkins_subnet.id
   }
 
-network_profile {
-  network_plugin = "azure"
-
-  service_cidr = "10.1.0.0/16"
-  dns_service_ip = "10.1.0.10"
-}
+  network_profile {
+    network_plugin = "azure"
+    service_cidr   = "10.1.0.0/16"
+    dns_service_ip = "10.1.0.10"
+  }
 
   identity {
     type = "SystemAssigned"
   }
+
   tags = {
     Environment = "Production"
   }
 
-  depends_on = [ azurerm_virtual_network.vnet, azurerm_subnet.jenkins_subnet]
+  depends_on = [
+    azurerm_virtual_network.vnet,
+    azurerm_subnet.jenkins_subnet
+  ]
 }
 
 # AKS Cluster Admin Kubeconfig
 data "azurerm_kubernetes_cluster" "aks" {
   name                = azurerm_kubernetes_cluster.aks.name
   resource_group_name = azurerm_resource_group.rg.name
-
 }
